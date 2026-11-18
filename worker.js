@@ -96,6 +96,19 @@ function hostAllowed(hostname) {
   return ALLOWED_HOSTS.some((h) => hostname === h || hostname.endsWith('.' + h));
 }
 
+// Put the injected tags where they can't change how the page renders: inside <head>, and never
+// before the <!DOCTYPE> (anything ahead of it switches the browser into quirks mode, which
+// changes layout and text sizing).
+function injectIntoHtml(html, inject) {
+  const head = /<head(\s[^>]*)?>/i; // not <header>
+  if (head.test(html)) return html.replace(head, (m) => m + inject);
+  const root = /<html(\s[^>]*)?>/i;
+  if (root.test(html)) return html.replace(root, (m) => m + '<head>' + inject + '</head>');
+  const doctype = html.match(/^\s*<!doctype[^>]*>/i);
+  if (doctype) return doctype[0] + inject + html.slice(doctype[0].length);
+  return inject + html;
+}
+
 function bridgeTag(cfg) {
   const json = JSON.stringify(cfg).replace(/</g, '\\u003c');
   return '<script>(' + bridge.toString() + ')(' + json + ');</script>';
@@ -114,7 +127,8 @@ export default {
     if (request.method !== 'GET' && request.method !== 'HEAD') return text('Method not allowed.', 405);
 
     const fwd = new Headers();
-    for (const h of ['user-agent', 'accept', 'accept-language']) {
+    // Pass the phone's identity along so the site serves its mobile version.
+    for (const h of ['user-agent', 'accept', 'accept-language', 'sec-ch-ua', 'sec-ch-ua-mobile', 'sec-ch-ua-platform']) {
       const v = request.headers.get(h);
       if (v) fwd.set(h, v);
     }
@@ -139,7 +153,7 @@ export default {
     const inject =
       '<base href="' + escapeAttr(t.href) + '">' +
       bridgeTag({ parentOrigin: ALLOWED_PARENT, realUrl: t.href, proxyBase: reqUrl.origin });
-    html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + inject) : inject + html;
+    html = injectIntoHtml(html, inject);
 
     headers.delete('content-length');
     headers.delete('content-encoding');
