@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FacebookMobile</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="icon-192x192.png">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FacebookMobile">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111111">
+</head>
+<body data-corner="bottom-right">
+  <!-- The hosted page. Its address is set from Settings (default in script.js). -->
+  <iframe id="frame" title="Web page"
+          allow="fullscreen; clipboard-read; clipboard-write; geolocation"
+          referrerpolicy="strict-origin-when-cross-origin"></iframe>
+
+  <button id="settingsBtn" type="button" aria-label="Open settings">&#9881;&#xFE0E;</button>
+
+  <div id="overlay" hidden>
+    <div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <header class="sheet-head">
+        <h2 id="sheetTitle">Settings</h2>
+        <button id="closeBtn" type="button" class="icon-btn" aria-label="Close settings">&#10005;</button>
+      </header>
+
+      <div id="applyBar" class="apply" hidden>
+        <span>Changes apply when the page reloads.</span>
+        <button id="applyBtn" type="button" class="primary small">Reload now</button>
+      </div>
+
+      <div id="mainView">
+        <section class="card">
+          <h3>Userscripts</h3>
+          <div class="row">
+            <span>Run userscripts</span>
+            <label class="switch"><input type="checkbox" id="masterToggle"><span class="track"></span></label>
+          </div>
+          <p id="modeNote" class="note"></p>
+          <ul id="scriptList" class="list"></ul>
+          <div class="btns">
+            <button id="addScriptBtn" type="button">+ New script</button>
+            <button id="importScriptBtn" type="button">Import .js file</button>
+            <input id="importScriptFile" type="file" accept=".js,.txt,text/javascript,text/plain" hidden>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Page</h3>
+          <label class="field">Address
+            <input id="urlInput" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://example.com">
+          </label>
+          <div class="btns">
+            <button id="goBtn" type="button" class="primary">Save &amp; load</button>
+            <button id="reloadBtn" type="button">Reload</button>
+            <button id="openTabBtn" type="button">Open in browser</button>
+          </div>
+          <p class="hint">Blank page? The site may refuse to be embedded. A proxy (below) gets around that.</p>
+        </section>
+
+        <section class="card">
+          <h3>Proxy</h3>
+          <label class="field">Proxy URL
+            <input id="proxyInput" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://your-worker.your-name.workers.dev">
+          </label>
+          <p class="hint">Needed for userscripts to run. Leave empty to load the site directly. Setup steps are in the README.</p>
+        </section>
+
+        <section class="card">
+          <h3>Display</h3>
+          <label class="row">
+            <span>Button position</span>
+            <select id="cornerSelect">
+              <option value="bottom-right">Bottom right</option>
+              <option value="bottom-left">Bottom left</option>
+              <option value="top-right">Top right</option>
+              <option value="top-left">Top left</option>
+            </select>
+          </label>
+          <div class="row">
+            <span>Fade the settings button</span>
+            <label class="switch"><input type="checkbox" id="fadeToggle"><span class="track"></span></label>
+          </div>
+          <div class="row">
+            <span>Reopen last page on launch</span>
+            <label class="switch"><input type="checkbox" id="rememberToggle"><span class="track"></span></label>
+          </div>
+          <div class="row">
+            <span>Keep screen on</span>
+            <label class="switch"><input type="checkbox" id="awakeToggle"><span class="track"></span></label>
+          </div>
+          <div class="row" id="fullscreenRow" hidden>
+            <span>Fullscreen</span>
+            <button id="fullscreenBtn" type="button" class="small">Enter</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Data</h3>
+          <div class="btns">
+            <button id="exportBtn" type="button">Export settings</button>
+            <button id="importDataBtn" type="button">Import settings</button>
+            <button id="resetBtn" type="button" class="danger">Reset all</button>
+            <input id="importDataFile" type="file" accept=".json,application/json" hidden>
+          </div>
+        </section>
+      </div>
+
+      <div id="editView" hidden>
+        <section class="card">
+          <h3 id="editTitle">New script</h3>
+          <label class="field">Name
+            <input id="edName" type="text" autocomplete="off" placeholder="My script">
+          </label>
+          <label class="field">Run on pages matching
+            <textarea id="edMatch" rows="2" autocapitalize="off" spellcheck="false" placeholder="https://example.com/*  (one per line, blank = every page)"></textarea>
+          </label>
+          <label class="row">
+            <span>Run at</span>
+            <select id="edRunAt">
+              <option value="end">Page ready (default)</option>
+              <option value="start">Document start</option>
+            </select>
+          </label>
+          <label class="field">Code
+            <textarea id="edCode" rows="12" class="code" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="// JavaScript runs inside the page"></textarea>
+          </label>
+          <p class="hint">Only run code you trust: it can read and change everything on the page, including what you type.</p>
+          <div class="btns">
+            <button id="edSave" type="button" class="primary">Save</button>
+            <button id="edCancel" type="button">Cancel</button>
+            <button id="edDelete" type="button" class="danger" hidden>Delete</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
